@@ -9,8 +9,8 @@ upperCI <- function(v) {
 	mean(v) + sd(v)*1.96/sqrt(length(v))
 }
 
-plotCIs <- function(dataFrame, variable, label, zeroLine=FALSE) {
-	p <- ggplot(dataFrame, aes(x=chart.type, fill=chart.type, y=variable))
+plotCIs <- function(dataFrame, x_variable, y_variable, label, zeroLine=FALSE) {
+	p <- ggplot(dataFrame, aes(x=x_variable, fill=x_variable, y=y_variable))
 	if (zeroLine) {
 		p <- p + geom_hline(yintercept=0, linetype="dotted")
 	}
@@ -23,6 +23,36 @@ plotCIs <- function(dataFrame, variable, label, zeroLine=FALSE) {
 
 setwd("~/Documents/src/pie-summaries")
 
+# donut inner radii
+donuts <- read.csv("data/donut-radii-merged.csv") %>%
+	mutate(inner_radius = factor(inner_radius))
+
+# get the average result for condition 1 per subject
+donutsAggregated <- donuts %>%
+	group_by(inner_radius, subjectID) %>%
+	summarize(meanError = mean(judged_true),
+			  meanAbsError = mean(abs(judged_true)))
+
+donuts0radius <- donutsAggregated %>%
+	filter(inner_radius == 0) %>%
+	rename(pie_meanError = meanError,
+		   pie_meanAbsError = meanAbsError,
+		   r0 = inner_radius)
+
+donutsJoined <- left_join(donuts0radius, donutsAggregated) %>%
+	mutate(pieDifferenceMeanError = meanError-pie_meanError,
+		   pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
+
+plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanError, "Error (Bias)", TRUE)
+
+plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanAbsError, "Absolute Error (Precision)")
+
+plotCIs(donutsAggregated, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+
+plotCIs(donutsAggregated, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
+
+#
+#
 # pie-variations variations
 variations <- read.csv("data/pie-variations-enriched.csv")
 
@@ -51,17 +81,16 @@ pieChartsOnly <- variationsAggregated %>%
 		   chartPie = chart.type) # since we can't seem to get rid of the chart.type column
 
 # join pieChartsOnly back in to calculate difference from pie error per person
-variationsJoined <- pieChartsOnly %>%
-	left_join(variationsAggregated, by=c("workerID")) %>%
+variationsJoined <- left_join(pieChartsOnly, variationsAggregated, by=c("workerID")) %>%
 	mutate(
 		pieDifferenceMeanError = meanError-pie_meanError,
 		pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
 
-plotCIs(variationsAggregated, variationsAggregated$meanError, "Error (Bias)", TRUE)
+plotCIs(variationsAggregated, variationsAggregated$chart.type, variationsAggregated$meanError, "Error (Bias)", TRUE)
 
-plotCIs(variationsAggregated, variationsAggregated$meanAbsError, "Error (Bias)")
+plotCIs(variationsAggregated, variationsAggregated$chart.type, variationsAggregated$meanAbsError, "Absolute Error (Precision)")
 
-plotCIs(variationsJoined, variationsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
 
-plotCIs(variationsJoined, variationsJoined$pieDifferenceMeanAbsError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
 
