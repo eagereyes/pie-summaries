@@ -18,11 +18,47 @@ plotCIs <- function(dataFrame, x_variable, y_variable, label, zeroLine=FALSE) {
 		stat_summary(fun.ymin=lowerCI, fun.ymax=upperCI, geom="errorbar", aes(width=.1)) +
 		stat_summary(fun.y=mean, geom="point", shape=18, size=3, show.legend = FALSE) + 
 		labs(x = NULL, y = label)
-	p
+	print(p)
 }
 
 setwd("~/Documents/src/pie-summaries")
 
+# data was reshaped in Google Sheets, and opposite answer corrections were calculated here: https://docs.google.com/spreadsheets/d/1ykUK7l82OZAMIvE8jHLjqYt6GmsKuTl934qqgxZ2faE/edit?usp=sharing
+# aaa = arcs angles areas
+aaa <- read.csv("data/arcs-angles-areas-merged.csv") %>%
+	mutate(chart_type = factor(chart_type,
+							   levels=c('Pie Chart', 'Donut Chart', 'Arc-Length Chart',  'Area Chart', 'Pie Angle Chart', 'Donut Angle Chart'),
+							   labels=c('Pie Chart', 'Donut Chart', 'Arc-Length',  'Area Only', 'Angle Only', 'Angle Only Donut')),
+		   judged_true_corrected = ifelse(log_error == log_opposite, judged_true, (100-ans_trial)-correct_ans)
+	)
+
+aaaAggregated <- aaa %>%
+	group_by(chart_type, subjectID) %>%
+	summarize(meanError = mean(judged_true_corrected),
+			  meanAbsError = mean(abs(judged_true_corrected)))
+
+aaaPies <- aaaAggregated %>%
+	filter(chart_type == "Pie Chart") %>%
+	select(subjectID,
+		   pie_meanError = meanError,
+		   pie_meanAbsError = meanAbsError,
+		   chartPie = chart_type) # since we can't seem to get rid of the chart_type column
+
+aaaJoined <- left_join(aaaPies, aaaAggregated) %>%
+	mutate(pieDifferenceMeanError = meanError-pie_meanError,
+		   pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
+
+plotCIs(aaaAggregated, aaaAggregated$chart_type, aaaAggregated$meanError, "Error (Bias)", TRUE)
+
+plotCIs(aaaAggregated, aaaAggregated$chart_type, aaaAggregated$meanAbsError, "Absolute Error (Precision)")
+
+plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+
+plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
+
+
+#
+#
 # donut inner radii
 donuts <- read.csv("data/donut-radii-merged.csv") %>%
 	mutate(inner_radius = factor(inner_radius))
@@ -47,9 +83,9 @@ plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanEr
 
 plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanAbsError, "Absolute Error (Precision)")
 
-plotCIs(donutsAggregated, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
 
-plotCIs(donutsAggregated, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
+plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
 
 #
 #
