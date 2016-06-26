@@ -273,7 +273,7 @@
     <path d="M302.83,273.87 L302.83,271.13" fill-opacity="0" stroke="#333333" stroke-width="1.07" stroke-linejoin="round"/>
     <path d="M405.79,273.87 L405.79,271.13" fill-opacity="0" stroke="#333333" stroke-width="1.07" stroke-linejoin="round"/>
     <path d="M508.75,273.87 L508.75,271.13" fill-opacity="0" stroke="#333333" stroke-width="1.07" stroke-linejoin="round"/>
-    <text transform="matrix(1, 0, 0, 1, 96.924, 279.52)">
+    <text transform="matrix(1, 0, 0, 1, 96.924, 279.52)" display="none">
       <tspan x="-6.504" y="3" font-family="Helvetica" font-size="9" fill="#4D4D4D">Pi</tspan>
       <tspan x="1.499" y="3" font-family="Helvetica" font-size="9" kerning="0" fill="#4D4D4D">e</tspan>
     </text>
