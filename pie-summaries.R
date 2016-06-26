@@ -9,16 +9,17 @@ upperCI <- function(v) {
 	mean(v) + sd(v)*1.96/sqrt(length(v))
 }
 
-plotCIs <- function(dataFrame, x_variable, y_variable, label, zeroLine=FALSE) {
+plotCIs <- function(dataFrame, x_variable, y_variable, label, zeroLine=NA) {
 	p <- ggplot(dataFrame, aes(x=x_variable, fill=x_variable, y=y_variable))
-	if (zeroLine) {
-		p <- p + geom_hline(yintercept=0, linetype="dotted")
+	if (!is.na(zeroLine)) {
+		p <- p + geom_hline(yintercept=0, linetype=zeroLine)
 	}
 	p <- p +
 		stat_summary(fun.ymin=lowerCI, fun.ymax=upperCI, geom="errorbar", aes(width=.1)) +
 		stat_summary(fun.y=mean, geom="point", shape=18, size=3, show.legend = FALSE) + 
 		labs(x = NULL, y = label)
-	print(p)
+
+	p
 }
 
 setwd("~/Documents/src/pie-summaries")
@@ -48,14 +49,17 @@ aaaJoined <- left_join(aaaPies, aaaAggregated) %>%
 	mutate(pieDifferenceMeanError = meanError-pie_meanError,
 		   pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
 
-plotCIs(aaaAggregated, aaaAggregated$chart_type, aaaAggregated$meanError, "Error (Bias)", TRUE)
+plotCIs(aaaAggregated, aaaAggregated$chart_type, aaaAggregated$meanError, "Error (Bias)", 'dotted')
+ggsave('pdf-raw/aaa-error.pdf', width=8, height=4)
 
 plotCIs(aaaAggregated, aaaAggregated$chart_type, aaaAggregated$meanAbsError, "Absolute Error (Precision)")
+ggsave('pdf-raw/aaa-abs-error.pdf', width=8, height=4)
 
-plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", 'dashed')
+ggsave('pdf-raw/aaa-error-rel.pdf', width=8, height=4)
 
-plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
-
+plotCIs(aaaJoined, aaaJoined$chart_type, aaaJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", 'dashed')
+ggsave('pdf-raw/aaa-abs-error-rel.pdf', width=8, height=4)
 
 #
 #
@@ -79,13 +83,17 @@ donutsJoined <- left_join(donuts0radius, donutsAggregated) %>%
 	mutate(pieDifferenceMeanError = meanError-pie_meanError,
 		   pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
 
-plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanError, "Error (Bias)", TRUE)
+plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanError, "Error (Bias)", 'dotted')
+ggsave('pdf-raw/donuts-error.pdf', width=8, height=4)
 
 plotCIs(donutsAggregated, donutsAggregated$inner_radius, donutsAggregated$meanAbsError, "Absolute Error (Precision)")
+ggsave('pdf-raw/donuts-abs-error.pdf', width=8, height=4)
 
-plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", 'dashed')
+ggsave('pdf-raw/donuts-error-rel.pdf', width=8, height=4)
 
-plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
+plotCIs(donutsJoined, donutsJoined$inner_radius, donutsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", 'dashed')
+ggsave('pdf-raw/donuts-abs-error-rel.pdf', width=8, height=4)
 
 #
 #
@@ -122,11 +130,15 @@ variationsJoined <- left_join(pieChartsOnly, variationsAggregated, by=c("workerI
 		pieDifferenceMeanError = meanError-pie_meanError,
 		pieDifferenceMeanAbsError = meanAbsError-pie_meanAbsError)
 
-plotCIs(variationsAggregated, variationsAggregated$chart.type, variationsAggregated$meanError, "Error (Bias)", TRUE)
+plotCIs(variationsAggregated, variationsAggregated$chart.type, variationsAggregated$meanError, "Error (Bias)", 'dotted')
+ggsave('pdf-raw/variations-error.pdf', width=8, height=4)
 
 plotCIs(variationsAggregated, variationsAggregated$chart.type, variationsAggregated$meanAbsError, "Absolute Error (Precision)")
+ggsave('pdf-raw/variations-abs-error.pdf', width=8, height=4)
 
-plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", TRUE)
+plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanError, "Error relative to Pie (Bias)", 'dashed')
+ggsave('pdf-raw/variations-error-rel.pdf', width=8, height=4)
 
-plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", TRUE)
+plotCIs(variationsJoined, variationsJoined$chart.type, variationsJoined$pieDifferenceMeanAbsError, "Absolute Error relative to Pie (Precision)", 'dashed')
+ggsave('pdf-raw/variations-abs-error-rel.pdf', width=8, height=4)
 
