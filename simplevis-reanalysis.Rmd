@@ -1,0 +1,105 @@
+---
+title: "Reanalysis of BELIV Paper Study Data"
+author: "Robert Kosara"
+date: "July 10, 2016"
+output: html_document
+---
+
+For [a paper at BELIV 2010](http://kosara.net/publications/Kosara_BELIV_2010.html), Caroline Ziemkiewicz and I ran a study on Mechanical Turk that was among the first visualization studies run there. We decided to do a quick study of different chart types to see how well it would work.
+
+This is a reanalysis of the data in light of [the more recent pie chart studies](https://eagereyes.org/blog/2016/an-illustrated-tour-of-the-pie-chart-study-results) by Drew Skau and me.
+
+## Data
+
+First, reading in the data and doing a bit of work to calculate error and reorder and rename the charts. We called the study _simplevis_ back then, so _sv_ is the prefix for the datasets.
+
+```{r message=FALSE}
+library(dplyr)
+
+sv <- read.csv("data/simplevis.csv", sep="\t") %>%
+	mutate(error = Estimate-Value,
+		   Type = factor(Type,
+		   			  levels=c("squarepie", "bars", "piechart", "donut"),
+		   			  labels=c("Square Pie", "Bar Chart", "Pie Chart", "Donut Chart")))
+```
+
+Aggreagate by participant and chart type. This calculates mean error and mean absolute error.
+
+```{r}
+svAgg <- group_by(sv, ID, Type) %>%
+	summarize(meanError = mean(error),
+				meanAbsError = mean(abs(error)))
+```
+
+## Helper Functions
+
+The first two functions below are helpers that calculate the lower and upper bounds of the confidence interval. `plotCIs` creates the plots.
+
+```{r}
+library(ggplot2)
+
+lowerCI <- function(v) {
+	mean(v) - sd(v)*1.96/sqrt(length(v))
+}
+
+upperCI <- function(v) {
+	mean(v) + sd(v)*1.96/sqrt(length(v))
+}
+
+plotCIs <- function(dataFrame, x_variable, y_variable, label, zeroLine=NA) {
+	p <- ggplot(dataFrame, aes(x=x_variable, fill=x_variable, y=y_variable))
+	if (!is.na(zeroLine)) {
+		p <- p + geom_hline(yintercept=0, linetype=zeroLine)
+	}
+	p <- p +
+		stat_summary(fun.ymin=lowerCI, fun.ymax=upperCI, geom="errorbar", aes(width=.1)) +
+		stat_summary(fun.y=mean, geom="point", shape=18, size=3, show.legend = FALSE) + 
+		labs(x = NULL, y = label)
+
+	p
+}
+```
+
+## Plotting the Data
+
+Now the plots! First up, signed error for all four chart types, which shows bias.
+
+```{r}
+plotCIs(svAgg, svAgg$Type, svAgg$meanError, "Error (Bias)", 'dotted')
+```
+
+Next, absolute error, which shows precision.
+
+```{r}
+plotCIs(svAgg, svAgg$Type, svAgg$meanAbsError, "Absolute Error (Precision)")
+```
+
+## Choose Square Pie as Baseline
+
+Now we create a separate data frame that has just the square pie values, and then join that back with the other data and calculate the difference between each of the chart types and the square pie. 
+This lets us compare the other chart types to the square pie by looking at whether their confidence intervals cross the zero line.
+
+```{r message=FALSE}
+svSquarePies <- filter(svAgg, Type == "Square Pie") %>%
+	select(ID,
+		   sqpie_meanError = meanError,
+		   sqpie_meanAbsError = meanAbsError,
+		   t = Type)
+
+svJoined <- left_join(svSquarePies, svAgg) %>%
+	mutate(sqpieDifferenceMeanError = meanError-sqpie_meanError,
+		   sqpieDifferenceMeanAbsError = meanAbsError-sqpie_meanAbsError)	
+```
+
+First again the signed error or bias.
+
+```{r}
+plotCIs(svJoined, svJoined$Type, svJoined$sqpieDifferenceMeanError, "Error relative to Square Pie (Bias)", 'dashed')
+```
+
+Next the absolute error, or precision.
+
+```{r}
+plotCIs(svJoined, svJoined$Type, svJoined$sqpieDifferenceMeanAbsError, "Absolute Error relative to Square Pie (Precision)", 'dashed')
+```
+
