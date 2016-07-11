@@ -103,3 +103,48 @@ Next the absolute error, or precision.
 plotCIs(svJoined, svJoined$Type, svJoined$sqpieDifferenceMeanAbsError, "Absolute Error relative to Square Pie (Precision)", 'dashed')
 ```
 
+## Comparison with Arcs, Angles, Areas Study
+
+To compare with the more recent study, we load in the arcs-angles-areas dataset. This requires some work to rename variables. Both datasets are reduced to the minimum set of columns to reduce merging issues.
+
+```{r}
+aaa <- read.csv("data/arcs-angles-areas-merged.csv") %>%
+	filter(chart_type == 'Pie Chart' | chart_type == 'Donut Chart') %>%
+	mutate(chart_type = factor(chart_type,
+							   levels=c('Pie Chart', 'Donut Chart'),
+		   			  labels=c('Pie AAA', 'Donut AAA')),
+		   error = ifelse(log_error == log_opposite, judged_true, (100-ans_trial)-correct_ans),
+		   subjectID = factor(subjectID)
+	) %>%
+	select(ID = subjectID, Type = chart_type, error)
+
+aaaAggregated <- aaa %>%
+	group_by(Type, ID) %>%
+	summarize(meanError = mean(error),
+			  meanAbsError = mean(abs(error)))
+
+svReduced <- select(svAgg, ID, Type, meanError, meanAbsError)
+```
+
+Now we merge them and reorder the combined `Type` column for better charts.
+
+```{r warning=FALSE}
+svAAAMerged <- bind_rows(svReduced, aaaAggregated) %>%
+	mutate(Type = factor(Type,
+		   			  levels=c("Square Pie", "Bar Chart", "Pie Chart", "Donut Chart", "Pie AAA", "Donut AAA")))
+
+```
+
+Comparison time! Signed error first again.
+
+```{r}
+plotCIs(svAAAMerged, svAAAMerged$Type, svAAAMerged$meanError, "Error (Bias)", 'dotted')
+```
+
+Absolute error.
+
+```{r}
+plotCIs(svAAAMerged, svAAAMerged$Type, svAAAMerged$meanAbsError, "Absolute Error (Precision)")
+```
+
+Oddly, the error in the more recent study is much higher than in the first one. The two chart types behave the same in each of them, though.
