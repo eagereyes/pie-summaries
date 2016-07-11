@@ -20,7 +20,10 @@ sv <- read.csv("data/simplevis.csv", sep="\t") %>%
 	mutate(error = Estimate-Value,
 		   Type = factor(Type,
 		   			  levels=c("squarepie", "bars", "piechart", "donut"),
-		   			  labels=c("Square Pie", "Bar Chart", "Pie Chart", "Donut Chart")))
+		   			  labels=c("Square Pie", "Bar Chart", "Pie Chart", "Donut Chart")),
+		   Confidence = factor(Confidence,
+		   					levels=c("low", "medium", "high"),
+		   					labels=c("Low", "Medium", "High")))
 ```
 
 Aggreagate by participant and chart type. This calculates mean error and mean absolute error.
@@ -101,6 +104,17 @@ Next the absolute error, or precision.
 
 ```{r}
 plotCIs(svJoined, svJoined$Type, svJoined$sqpieDifferenceMeanAbsError, "Absolute Error relative to Square Pie (Precision)", 'dashed')
+```
+
+## Confidence
+
+It's also intersting to look at the confidence. People had much higher confidence in their guesses with the square pie, less with the pie and donut, and least with the stacked bar!
+
+```{r}
+ggplot(sv, aes(x=Type, fill=Confidence)) +
+	geom_bar(stat="count", position=position_dodge()) +
+	scale_fill_brewer(palette="Spectral") +
+	labs(x=NULL, y=NULL)
 ```
 
 ## Comparison with Arcs, Angles, Areas Study
